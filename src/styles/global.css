@@ -1,6 +1,5 @@
 @import '@fontsource-variable/libre-franklin';
 @import '@fontsource/bitter/400-italic.css';
-@import '@fontsource/bitter/500.css';
 
 /* Woodland (base16 woodland), the pinned brand palette. */
 :root {
@@ -13,7 +12,6 @@
   --goldenrod: #e0ac16;
   --goldenrod-deep: #c99a12;
   --fern: #6eb958;
-  --moss: #b7ba53;
   --ember: #d35c5c;
   --rust: #ca7f32;
   --sky: #88a4d3;
