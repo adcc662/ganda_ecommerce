@@ -1,0 +1,8 @@
+---
+import AppPage from '../components/layout/AppPage.astro';
+import CartView from '../components/islands/CartView';
+---
+
+<AppPage title="Your cart">
+  <CartView client:load />
+</AppPage>

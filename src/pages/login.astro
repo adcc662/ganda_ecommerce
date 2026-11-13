@@ -1,0 +1,8 @@
+---
+import AuthPage from '../components/layout/AuthPage.astro';
+import AuthForm from '../components/islands/AuthForm';
+---
+
+<AuthPage title="Log in" lede="Pick up your cart, check your orders, or keep your listings up to date.">
+  <AuthForm client:load mode="login" />
+</AuthPage>

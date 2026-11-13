@@ -1,0 +1,8 @@
+---
+import AppPage from '../../components/layout/AppPage.astro';
+import OrdersList from '../../components/islands/OrdersList';
+---
+
+<AppPage title="Your orders" lede="Everything you have bought on Ganda, newest first.">
+  <OrdersList client:load />
+</AppPage>

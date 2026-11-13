@@ -1,0 +1,8 @@
+---
+import AuthPage from '../components/layout/AuthPage.astro';
+import AuthForm from '../components/islands/AuthForm';
+---
+
+<AuthPage title="Create your account" lede="One account to buy from anyone and to sell anything you own or make.">
+  <AuthForm client:load mode="register" />
+</AuthPage>

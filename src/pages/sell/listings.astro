@@ -1,0 +1,15 @@
+---
+import AppPage from '../../components/layout/AppPage.astro';
+import MyListings from '../../components/islands/MyListings';
+---
+
+<AppPage title="Your listings" lede="Everything you are selling, exactly as buyers see it.">
+  <div class="actions"><a class="btn btn--act" href="/sell">Add another</a></div>
+  <MyListings client:load />
+</AppPage>
+
+<style>
+  .actions {
+    margin: calc(var(--space-5) * -1) 0 var(--space-5);
+  }
+</style>

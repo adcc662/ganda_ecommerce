@@ -1,0 +1,11 @@
+---
+import AppPage from '../../components/layout/AppPage.astro';
+import OrderDetail from '../../components/islands/OrderDetail';
+
+const id = Number(Astro.params.id);
+if (!Number.isInteger(id) || id <= 0) return Astro.redirect('/404');
+---
+
+<AppPage title="Order details" narrow={false}>
+  <OrderDetail client:load orderId={id} />
+</AppPage>

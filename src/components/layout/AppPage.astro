@@ -1,0 +1,43 @@
+---
+import Base from '../../layouts/Base.astro';
+
+interface Props {
+  title: string;
+  lede?: string;
+  narrow?: boolean;
+}
+const { title, lede, narrow = false } = Astro.props;
+---
+
+<Base title={title}>
+  <div class:list={['page', 'app', { 'app--narrow': narrow }]}>
+    <header class="app__head">
+      <h1>{title}</h1>
+      {lede && <p>{lede}</p>}
+    </header>
+    <slot />
+  </div>
+</Base>
+
+<style>
+  .app {
+    padding-block: var(--space-7) 0;
+  }
+  .app--narrow {
+    max-width: 920px;
+  }
+  .app__head {
+    display: grid;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+  }
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 820;
+    letter-spacing: -0.03em;
+  }
+  .app__head p {
+    color: var(--lichen);
+    max-width: 60ch;
+  }
+</style>
