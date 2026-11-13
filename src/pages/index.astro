@@ -1,0 +1,158 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionIndex from '../components/catalog/SectionIndex.astro';
+import CatalogHead from '../components/catalog/CatalogHead.astro';
+import EntryList from '../components/catalog/EntryList.astro';
+import Unavailable from '../components/catalog/Unavailable.astro';
+import { load } from '../lib/api/server';
+import { countBySection, pluralize } from '../lib/domain/sections';
+
+const { data, error } = await load(async (api) => {
+  const [categories, products] = await Promise.all([api.categories(), api.activeProducts()]);
+  return { categories, products };
+});
+const counts = data ? countBySection(data.products) : new Map();
+const newest = data?.products.slice(0, 12) ?? [];
+---
+
+<Base>
+  {
+    error || !data ? (
+      <Unavailable message={error?.message ?? 'Try again in a moment.'} />
+    ) : (
+      <>
+        <SectionIndex categories={data.categories} />
+        <div class="page">
+          <CatalogHead
+            title="Everything for sale"
+            lede={`${pluralize(data.products.length, 'entry', 'entries')} across ${pluralize(data.categories.length, 'section')}, each one written by the person selling it.`}
+          />
+          {newest.length > 0 ? (
+            <EntryList products={newest} label="Newest entries" />
+          ) : (
+            <div class="empty">
+              <h2>Nothing listed yet</h2>
+              <p>Be the first: anything you own or make can go in the catalog.</p>
+              <a class="btn btn--act" href="/sell">Add your listing</a>
+            </div>
+          )}
+
+          <section class="directory" aria-labelledby="dir-title">
+            <h2 id="dir-title">Sections</h2>
+            <div class="directory__grid">
+              {data.categories.map((c) => (
+                <div class="section">
+                  <h3>
+                    <a href={`/section/${c.slug}`}>{c.name}</a>
+                    <span class="meta tnum">{counts.get(c.name) ?? 0}</span>
+                  </h3>
+                  {c.description && <p>{c.description}</p>}
+                  <ul>
+                    {c.subcategories.map((s) => (
+                      <li>
+                        <a href={`/section/${c.slug}?sub=${s.slug}`}>{s.name}</a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section class="invite" aria-labelledby="invite-title">
+            <div>
+              <h2 id="invite-title">Got something worth selling?</h2>
+              <p>
+                Write it up the way you would describe it to a friend. Your words become the entry buyers read.
+              </p>
+            </div>
+            <a class="btn btn--act" href="/sell">Add your listing</a>
+          </section>
+        </div>
+      </>
+    )
+  }
+</Base>
+
+<style>
+  .empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding-block: var(--space-7);
+    border-top: 1px solid var(--bark-rule);
+  }
+  .directory {
+    margin-top: var(--space-8);
+  }
+  .directory > h2,
+  .invite h2 {
+    font-size: var(--step-3);
+    font-weight: 780;
+    margin-bottom: var(--space-5);
+  }
+  .directory__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    border-top: 1px solid var(--bark-rule);
+    border-left: 1px solid var(--bark-rule);
+  }
+  .section {
+    padding: var(--space-5);
+    border-right: 1px solid var(--bark-rule);
+    border-bottom: 1px solid var(--bark-rule);
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+  }
+  .section h3 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--step-1);
+  }
+  .section h3 a {
+    text-decoration: none;
+  }
+  .section h3 a:hover {
+    color: var(--goldenrod);
+  }
+  .section p {
+    color: var(--lichen);
+    font-size: var(--step--1);
+  }
+  .section ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    font-size: var(--step--1);
+  }
+  .section li a {
+    text-decoration: none;
+  }
+  .section li a:hover {
+    color: var(--ash);
+    text-decoration: underline;
+  }
+  .invite {
+    margin-top: var(--space-8);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    background: var(--bark-raised);
+    border-radius: var(--radius);
+  }
+  .invite h2 {
+    margin-bottom: var(--space-2);
+  }
+  .invite p {
+    max-width: 56ch;
+    color: var(--birch);
+  }
+</style>

@@ -1,0 +1,108 @@
+---
+import { Search, Plus } from 'lucide-react';
+import HeaderAccount from '../islands/HeaderAccount';
+
+interface Props {
+  query?: string;
+}
+const { query = '' } = Astro.props;
+---
+
+<header class="bar">
+  <div class="page bar__inner">
+    <a class="wordmark" href="/" aria-label="Ganda ecommerce, home">Ganda</a>
+    <form class="search" action="/search" method="get" role="search">
+      <label class="visually-hidden" for="q">Search the catalog</label>
+      <Search size={18} aria-hidden="true" />
+      <input id="q" name="q" type="search" value={query} placeholder="Search the catalog" autocomplete="off" />
+    </form>
+    <nav class="bar__nav" aria-label="Account">
+      <HeaderAccount client:load />
+      <a class="btn btn--act sell" href="/sell">
+        <Plus size={18} aria-hidden="true" />
+        <span>Add your listing</span>
+      </a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .bar {
+    border-bottom: 1px solid var(--bark-rule);
+    background: var(--bark);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .bar__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    min-height: 72px;
+  }
+  .wordmark {
+    font-weight: 820;
+    font-size: 1.5rem;
+    letter-spacing: -0.035em;
+    color: var(--ash);
+    text-decoration: none;
+  }
+  .search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--bark-rule);
+    border-radius: var(--radius);
+    color: var(--lichen);
+    transition: border-color 160ms var(--ease-out);
+  }
+  .search:hover {
+    border-color: var(--lichen);
+  }
+  .search:focus-within {
+    border-color: var(--goldenrod);
+    box-shadow: 0 0 0 1px var(--goldenrod);
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ash);
+    padding: 10px 0;
+  }
+  .search input::placeholder {
+    color: var(--lichen);
+  }
+  .search input:focus {
+    outline: none;
+  }
+  .bar__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  @media (max-width: 760px) {
+    .bar__inner {
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      padding-block: var(--space-3);
+    }
+    .search {
+      order: 3;
+      flex-basis: 100%;
+    }
+    .bar__nav {
+      margin-left: auto;
+    }
+    .sell span {
+      display: none;
+    }
+    .sell {
+      padding-inline: var(--space-3);
+    }
+  }
+</style>

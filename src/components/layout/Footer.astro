@@ -1,0 +1,48 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="page foot__inner">
+    <p><strong>Ganda ecommerce</strong>: a catalog where anyone can sell anything.</p>
+    <nav aria-label="Footer">
+      <a href="/sell">Add your listing</a>
+      <a href="/sell/listings">Your listings</a>
+      <a href="/orders">Orders</a>
+      <a href="/account">Account</a>
+    </nav>
+    <p class="meta">© {year} Ganda. Prices in USD.</p>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    margin-top: var(--space-8);
+    border-top: 1px solid var(--bark-rule);
+    background: var(--bark-raised);
+  }
+  .foot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-6);
+    align-items: baseline;
+    justify-content: space-between;
+    padding-block: var(--space-6);
+    font-size: var(--step--1);
+  }
+  strong {
+    color: var(--ash);
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+  }
+  nav a {
+    text-decoration: none;
+  }
+  nav a:hover {
+    color: var(--ash);
+    text-decoration: underline;
+  }
+</style>

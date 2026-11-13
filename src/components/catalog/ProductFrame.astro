@@ -1,0 +1,62 @@
+---
+import { iconFor } from '../../lib/domain/sections';
+
+interface Props {
+  name: string;
+  categoryName: string;
+  subcategoryName: string;
+  imageUrl?: string | null;
+  size?: 'entry' | 'hero';
+}
+const { name, categoryName, subcategoryName, imageUrl, size = 'entry' } = Astro.props;
+const Icon = iconFor(categoryName);
+---
+
+<div class:list={['frame', `frame--${size}`]}>
+  {
+    imageUrl ? (
+      <img src={imageUrl} alt={name} loading="lazy" decoding="async" />
+    ) : (
+      <div class="frame__empty" role="img" aria-label={`No photo yet for ${name}`}>
+        <Icon size={size === 'hero' ? 56 : 32} strokeWidth={1.25} aria-hidden="true" />
+        <span>{subcategoryName}</span>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .frame {
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--bark-raised);
+    border: 1px solid var(--bark-rule);
+  }
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .frame__empty {
+    height: 100%;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-2);
+    color: var(--lichen);
+    background-image: repeating-linear-gradient(
+      135deg,
+      transparent 0 11px,
+      color-mix(in srgb, var(--bark-rule) 45%, transparent) 11px 12px
+    );
+  }
+  .frame__empty span {
+    font-size: var(--step--1);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .frame--hero .frame__empty span {
+    font-size: var(--step-0);
+  }
+</style>

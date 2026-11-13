@@ -1,0 +1,30 @@
+---
+import { CloudOff } from 'lucide-react';
+interface Props {
+  message: string;
+}
+const { message } = Astro.props;
+---
+
+<div class="page">
+  <div class="unavailable">
+    <CloudOff size={32} strokeWidth={1.5} aria-hidden="true" />
+    <h1>The catalog is offline</h1>
+    <p>{message}</p>
+    <a class="btn" href="">Try again</a>
+  </div>
+</div>
+
+<style>
+  .unavailable {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    max-width: 52ch;
+    padding-block: var(--space-8);
+    color: var(--lichen);
+  }
+  h1 {
+    font-size: var(--step-3);
+  }
+</style>

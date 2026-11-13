@@ -1,0 +1,55 @@
+---
+import type { Category } from '../../lib/domain/types';
+
+interface Props {
+  categories: Category[];
+  active?: string;
+}
+const { categories, active } = Astro.props;
+---
+
+<nav class="index" aria-label="Sections">
+  <div class="page index__inner">
+    <a href="/" aria-current={active === undefined ? 'page' : undefined}>Everything</a>
+    {
+      categories.map((c) => (
+        <a href={`/section/${c.slug}`} aria-current={active === c.slug ? 'page' : undefined}>
+          {c.name}
+        </a>
+      ))
+    }
+  </div>
+</nav>
+
+<style>
+  .index {
+    background: var(--bark-raised);
+    border-bottom: 1px solid var(--bark-rule);
+  }
+  .index__inner {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  a {
+    flex: none;
+    padding: 14px var(--space-4);
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--birch);
+    border-right: 1px solid var(--bark-rule);
+    transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+  }
+  a:first-child {
+    border-left: 1px solid var(--bark-rule);
+  }
+  a:hover {
+    color: var(--ash);
+    background: var(--bark);
+  }
+  a[aria-current='page'] {
+    background: var(--bark);
+    color: var(--goldenrod);
+    box-shadow: inset 0 -2px var(--goldenrod);
+  }
+</style>

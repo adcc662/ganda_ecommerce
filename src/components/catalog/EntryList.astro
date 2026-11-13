@@ -1,0 +1,27 @@
+---
+import type { Product } from '../../lib/domain/types';
+import Entry from './Entry.astro';
+
+interface Props {
+  products: Product[];
+  label: string;
+}
+const { products, label } = Astro.props;
+---
+
+<section class="entries" aria-label={label}>
+  {products.map((product) => <Entry product={product} />)}
+</section>
+
+<style>
+  .entries {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-7);
+  }
+  @media (max-width: 1000px) {
+    .entries {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,94 @@
+---
+import Base from '../../layouts/Base.astro';
+import SectionIndex from '../../components/catalog/SectionIndex.astro';
+import CatalogHead from '../../components/catalog/CatalogHead.astro';
+import EntryList from '../../components/catalog/EntryList.astro';
+import Unavailable from '../../components/catalog/Unavailable.astro';
+import { load } from '../../lib/api/server';
+import { pluralize, productsIn } from '../../lib/domain/sections';
+
+const { slug } = Astro.params;
+const sub = Astro.url.searchParams.get('sub');
+
+const { data, error } = await load(async (api) => {
+  const [categories, products] = await Promise.all([api.categories(), api.activeProducts()]);
+  return { categories, products };
+});
+const category = data?.categories.find((c) => c.slug === slug);
+if (data && !category) return Astro.redirect('/404');
+
+const activeSub = category?.subcategories.find((s) => s.slug === sub);
+const entries = data && category ? productsIn(data.products, category, activeSub?.slug) : [];
+---
+
+<Base title={category?.name}>
+  {
+    error || !data || !category ? (
+      <Unavailable message={error?.message ?? 'Try again in a moment.'} />
+    ) : (
+      <>
+        <SectionIndex categories={data.categories} active={category.slug} />
+        <div class="page">
+          <CatalogHead title={activeSub ? activeSub.name : category.name} lede={category.description} crumbs={activeSub ? [{ href: `/section/${category.slug}`, label: category.name }] : []}>
+            <p class="meta tnum count">{pluralize(entries.length, 'entry', 'entries')}</p>
+          </CatalogHead>
+          <nav class="subs" aria-label={`${category.name} subsections`}>
+            <a href={`/section/${category.slug}`} aria-current={!activeSub ? 'page' : undefined}>All {category.name}</a>
+            {category.subcategories.map((s) => (
+              <a href={`/section/${category.slug}?sub=${s.slug}`} aria-current={activeSub?.slug === s.slug ? 'page' : undefined}>
+                {s.name}
+              </a>
+            ))}
+          </nav>
+          {entries.length > 0 ? (
+            <EntryList products={entries} label={`${category.name} entries`} />
+          ) : (
+            <div class="empty">
+              <h2>No entries here yet</h2>
+              <p>Nobody has listed anything in {activeSub?.name ?? category.name} so far.</p>
+              <a class="btn btn--act" href="/sell">List the first one</a>
+            </div>
+          )}
+        </div>
+      </>
+    )
+  }
+</Base>
+
+<style>
+  .count {
+    width: 100%;
+  }
+  .subs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+  }
+  .subs a {
+    padding: 6px var(--space-3);
+    border: 1px solid var(--bark-rule);
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-size: var(--step--1);
+    font-weight: 600;
+    transition: border-color 160ms var(--ease-out);
+  }
+  .subs a:hover {
+    border-color: var(--lichen);
+  }
+  .subs a[aria-current='page'] {
+    border-color: var(--goldenrod);
+    color: var(--goldenrod);
+  }
+  .empty {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    padding-block: var(--space-7);
+    border-top: 1px solid var(--bark-rule);
+  }
+  .empty p {
+    color: var(--lichen);
+  }
+</style>

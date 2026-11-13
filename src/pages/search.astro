@@ -1,0 +1,64 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionIndex from '../components/catalog/SectionIndex.astro';
+import CatalogHead from '../components/catalog/CatalogHead.astro';
+import EntryList from '../components/catalog/EntryList.astro';
+import Unavailable from '../components/catalog/Unavailable.astro';
+import { load } from '../lib/api/server';
+import { pluralize } from '../lib/domain/sections';
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+if (!q) return Astro.redirect('/');
+
+const { data, error } = await load(async (api) => {
+  const [categories, results] = await Promise.all([api.categories(), api.search(q)]);
+  return { categories, results: results.filter((p) => p.isActive) };
+});
+---
+
+<Base title={`“${q}”`} query={q}>
+  {
+    error || !data ? (
+      <Unavailable message={error?.message ?? 'Try again in a moment.'} />
+    ) : (
+      <>
+        <SectionIndex categories={data.categories} active="" />
+        <div class="page">
+          <CatalogHead title={`Results for “${q}”`} lede={pluralize(data.results.length, 'entry', 'entries')} />
+          {data.results.length > 0 ? (
+            <EntryList products={data.results} label={`Results for ${q}`} />
+          ) : (
+            <div class="empty">
+              <h2>Nobody is selling “{q}” right now</h2>
+              <p>Try a shorter word, or browse a section instead.</p>
+              <ul>
+                {data.categories.map((c) => (
+                  <li><a href={`/section/${c.slug}`}>{c.name}</a></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </>
+    )
+  }
+</Base>
+
+<style>
+  .empty {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-7);
+    border-top: 1px solid var(--bark-rule);
+  }
+  .empty p {
+    color: var(--lichen);
+  }
+  .empty ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+</style>

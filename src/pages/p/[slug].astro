@@ -1,0 +1,171 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProductFrame from '../../components/catalog/ProductFrame.astro';
+import Unavailable from '../../components/catalog/Unavailable.astro';
+import AddToCart from '../../components/islands/AddToCart';
+import { load } from '../../lib/api/server';
+import { formatPrice, priceOf } from '../../lib/domain/money';
+import { PLATFORM_SELLER } from '../../lib/sellers/constants';
+
+const { slug = '' } = Astro.params;
+const { data: p, error } = await load((api) => api.bySlug(slug));
+if (error?.status === 404 || (p && !p.isActive)) return Astro.redirect('/404');
+
+const tag = p ? priceOf(p) : null;
+const listed = p ? new Date(p.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+const facts = p
+  ? ([
+      ['Section', `${p.categoryName} › ${p.subcategoryName}`],
+      ['SKU', p.sku],
+      ['Weight', p.weight != null ? `${p.weight} kg` : null],
+      ['Dimensions', p.dimensions],
+      ['Listed', listed],
+    ].filter(([, v]) => v) as [string, string][])
+  : [];
+---
+
+<Base title={p?.name} description={p?.description ?? undefined}>
+  {
+    error || !p || !tag ? (
+      <Unavailable message={error?.message ?? 'Try again in a moment.'} />
+    ) : (
+      <div class="page product">
+        <nav class="crumbs" aria-label="Breadcrumb">
+          <a href="/">Everything</a>
+          <span aria-hidden="true">/</span>
+          <span>{p.categoryName}</span>
+          <span aria-hidden="true">/</span>
+          <span>{p.subcategoryName}</span>
+        </nav>
+
+        <div class="product__grid">
+          <div class="product__media">
+            <ProductFrame name={p.name} categoryName={p.categoryName} subcategoryName={p.subcategoryName} imageUrl={p.imageUrls[0]} size="hero" />
+            {p.imageUrls.length > 1 && (
+              <ul class="thumbs">
+                {p.imageUrls.slice(1, 5).map((src, i) => (
+                  <li><img src={src} alt={`${p.name}, photo ${i + 2}`} loading="lazy" /></li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div class="product__info">
+            <h1>{p.name}</h1>
+            <p class="price big">
+              {formatPrice(tag.current)}
+              {tag.original && <s>{formatPrice(tag.original)}</s>}
+            </p>
+
+            {p.description && (
+              <blockquote class="voice big-voice">
+                <p>“{p.description}”</p>
+                <footer>{PLATFORM_SELLER}, the seller</footer>
+              </blockquote>
+            )}
+
+            <AddToCart client:load productId={p.id} productName={p.name} stock={p.stockQuantity} />
+
+            <dl class="facts">
+              {facts.map(([k, v]) => (
+                <div>
+                  <dt>{k}</dt>
+                  <dd class="tnum">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </div>
+    )
+  }
+</Base>
+
+<style>
+  .product {
+    padding-top: var(--space-5);
+  }
+  .crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--step--1);
+    color: var(--lichen);
+    margin-bottom: var(--space-5);
+  }
+  .crumbs a {
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ash);
+    text-decoration: underline;
+  }
+  .product__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: var(--space-7);
+    align-items: start;
+  }
+  .product__media {
+    position: sticky;
+    top: 96px;
+  }
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-2);
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    list-style: none;
+  }
+  .thumbs img {
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius);
+  }
+  .product__info {
+    display: grid;
+    gap: var(--space-5);
+  }
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 820;
+    letter-spacing: -0.03em;
+  }
+  .big {
+    font-size: var(--step-3);
+    margin-top: calc(var(--space-3) * -1);
+  }
+  .big-voice {
+    font-size: var(--step-1);
+    max-width: 60ch;
+  }
+  .facts {
+    margin: 0;
+    border-top: 1px solid var(--bark-rule);
+  }
+  .facts div {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+    border-bottom: 1px solid var(--bark-rule);
+    font-size: var(--step--1);
+  }
+  dt {
+    color: var(--lichen);
+  }
+  dd {
+    margin: 0;
+    color: var(--ash);
+  }
+  @media (max-width: 860px) {
+    .product__grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-5);
+    }
+    .product__media {
+      position: static;
+    }
+  }
+</style>

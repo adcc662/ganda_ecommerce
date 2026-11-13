@@ -1,0 +1,62 @@
+---
+interface Props {
+  title: string;
+  lede?: string | null;
+  crumbs?: { href: string; label: string }[];
+}
+const { title, lede, crumbs = [] } = Astro.props;
+---
+
+<div class="head">
+  <div>
+    {
+      crumbs.length > 0 && (
+        <nav class="crumbs" aria-label="Breadcrumb">
+          {crumbs.map((c) => (
+            <>
+              <a href={c.href}>{c.label}</a>
+              <span aria-hidden="true">/</span>
+            </>
+          ))}
+        </nav>
+      )
+    }
+    <h1>{title}</h1>
+  </div>
+  {lede && <p class="lede">{lede}</p>}
+  <slot />
+</div>
+
+<style>
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: var(--space-4) var(--space-7);
+    padding-block: var(--space-7) var(--space-5);
+  }
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 820;
+    letter-spacing: -0.03em;
+  }
+  .lede {
+    max-width: 46ch;
+    color: var(--lichen);
+  }
+  .crumbs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+    font-size: var(--step--1);
+    color: var(--lichen);
+  }
+  .crumbs a {
+    text-decoration: none;
+  }
+  .crumbs a:hover {
+    color: var(--ash);
+    text-decoration: underline;
+  }
+</style>
