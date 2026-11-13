@@ -4,17 +4,22 @@ import type { Category } from '../../lib/domain/types';
 interface Props {
   categories: Category[];
   active?: string;
+  counts?: Map<string, number>;
 }
-const { categories, active } = Astro.props;
+const { categories, active, counts } = Astro.props;
+const total = counts ? [...counts.values()].reduce((a, b) => a + b, 0) : null;
 ---
 
 <nav class="index" aria-label="Sections">
   <div class="page index__inner">
-    <a href="/" aria-current={active === undefined ? 'page' : undefined}>Everything</a>
+    <a href="/" aria-current={active === undefined ? 'page' : undefined}>
+      Everything{total !== null && <span class="n tnum">{total}</span>}
+    </a>
     {
       categories.map((c) => (
         <a href={`/section/${c.slug}`} aria-current={active === c.slug ? 'page' : undefined}>
           {c.name}
+          {counts && <span class="n tnum">{counts.get(c.name) ?? 0}</span>}
         </a>
       ))
     }
@@ -39,6 +44,15 @@ const { categories, active } = Astro.props;
     color: var(--birch);
     border-right: 1px solid var(--bark-rule);
     transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out);
+  }
+  .n {
+    margin-left: var(--space-2);
+    font-weight: 500;
+    font-size: var(--step--1);
+    color: var(--lichen);
+  }
+  a[aria-current='page'] .n {
+    color: inherit;
   }
   a:first-child {
     border-left: 1px solid var(--bark-rule);

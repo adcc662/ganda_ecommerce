@@ -1,7 +1,9 @@
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatPrice } from '../../lib/domain/money';
-import type { CartItem } from '../../lib/domain/types';
+import type { CartItem, Product } from '../../lib/domain/types';
+import { catalogApi } from '../../lib/api/client';
+import { iconFor } from '../../lib/domain/sections';
 import { api, refreshCartCount } from '../../lib/session/session';
 import { Loading, Notice, messageOf } from './ui';
 import { useAuthed } from './useAuthed';
@@ -11,10 +13,23 @@ export default function CartView() {
   const [items, setItems] = useState<CartItem[] | null>(null);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [details, setDetails] = useState<Record<string, Product>>({});
 
   useEffect(() => {
     if (!user) return;
-    api.cart().then(setItems).catch((e) => setError(messageOf(e)));
+    api
+      .cart()
+      .then((list) => {
+        setItems(list);
+        // The cart API returns no description, so the seller's words come from the catalog.
+        const catalog = catalogApi();
+        Promise.allSettled(list.map((i) => catalog.bySlug(i.productSlug))).then((results) => {
+          const found: Record<string, Product> = {};
+          results.forEach((r) => r.status === 'fulfilled' && (found[r.value.slug] = r.value));
+          setDetails(found);
+        });
+      })
+      .catch((e) => setError(messageOf(e)));
   }, [user]);
 
   async function change(productId: number, quantity: number) {
@@ -43,7 +58,7 @@ export default function CartView() {
     return (
       <div className="cart-empty">
         <h2>Your cart is empty</h2>
-        <p>Find something in the catalog: every entry is written by the person selling it.</p>
+        <p>Find something in the catalog.</p>
         <a className="btn btn--act" href="/">Browse everything</a>
         <style>{`.cart-empty{display:grid;justify-items:start;gap:12px;padding:32px 0;border-top:1px solid var(--bark-rule)} .cart-empty p{color:var(--lichen)}`}</style>
       </div>
@@ -58,11 +73,19 @@ export default function CartView() {
       <ul className="cart__lines">
         {items.map((item) => (
           <li key={item.productId} className="line" aria-busy={busyId === item.productId}>
-            <div>
-              <a className="line__name" href={`/p/${item.productSlug}`}>
-                {item.productName}
-              </a>
-              <p className="meta tnum">{formatPrice(item.productPrice)} each</p>
+            <div className="line__item">
+              <LineThumb product={details[item.productSlug]} image={item.productImage} name={item.productName} />
+              <div className="line__text">
+                <a className="line__name" href={`/p/${item.productSlug}`}>
+                  {item.productName}
+                </a>
+                {details[item.productSlug]?.description && (
+                  <blockquote className="voice line__voice">
+                    <p>“{details[item.productSlug].description}”</p>
+                  </blockquote>
+                )}
+                <p className="meta tnum">{formatPrice(item.productPrice)} each</p>
+              </div>
             </div>
             <div className="stepper" role="group" aria-label={`Quantity of ${item.productName}`}>
               <button className="btn btn--quiet" onClick={() => change(item.productId, item.quantity - 1)} disabled={busyId !== null} aria-label="One less">
@@ -102,6 +125,12 @@ export default function CartView() {
         .cart__lines { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--bark-rule); }
         .line { display: grid; grid-template-columns: 1fr auto 110px auto; gap: 16px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bark-rule); }
         .line[aria-busy='true'] { opacity: .6; }
+        .line__item { display: grid; grid-template-columns: 88px 1fr; gap: 16px; align-items: start; min-width: 0; }
+        .line__text { display: grid; gap: 6px; min-width: 0; }
+        .line__voice { font-size: .875rem; padding-left: 12px; }
+        .line__voice p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .thumb { aspect-ratio: 4/3; border-radius: var(--radius); border: 1px solid var(--bark-rule); background: var(--bark-raised); display: grid; place-content: center; color: var(--lichen); overflow: hidden; }
+        .thumb img { width: 100%; height: 100%; object-fit: cover; }
         .line__name { font-weight: 700; color: var(--ash); text-decoration: none; }
         .line__name:hover { text-decoration: underline; }
         .line__total { text-align: right; }
@@ -115,9 +144,19 @@ export default function CartView() {
         @media (max-width: 860px) {
           .cart { grid-template-columns: 1fr; gap: 24px; }
           .line { grid-template-columns: 1fr auto; }
+          .line__item { grid-column: 1 / -1; grid-template-columns: 72px 1fr; }
           .line__total { text-align: left; }
         }
       `}</style>
+    </div>
+  );
+}
+
+function LineThumb({ product, image, name }: { product?: Product; image: string | null; name: string }) {
+  const Icon = iconFor(product?.subcategoryName ?? '', product?.categoryName ?? '');
+  return (
+    <div className="thumb" aria-hidden="true">
+      {image ? <img src={image} alt={name} /> : <Icon size={22} strokeWidth={1.25} />}
     </div>
   );
 }

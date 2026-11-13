@@ -32,8 +32,11 @@ export default function OrderDetail({ orderId }: { orderId: number }) {
   if (!user || (!order && !error)) return <Loading lines={4} />;
   if (!order) return <Notice tone="error">{error}</Notice>;
 
-  const status = ORDER_STATUS[order.orderStatus];
   const active = payments.find((p) => p.status === 'PENDING' || p.status === 'COMPLETED');
+  const status =
+    order.orderStatus === 'PENDING' && active?.status === 'PENDING'
+      ? { label: 'Payment clearing', tone: 'info' as const }
+      : ORDER_STATUS[order.orderStatus];
   const canPay = order.orderStatus === 'PENDING' && !active;
 
   async function pay() {

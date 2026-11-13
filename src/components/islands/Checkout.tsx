@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { formatPrice } from '../../lib/domain/money';
 import type { Address, CartItem } from '../../lib/domain/types';
@@ -87,7 +88,7 @@ export default function Checkout() {
           </div>
         ) : (
           <button type="button" className="btn btn--quiet add" onClick={() => setAdding(type)}>
-            + Add a new address
+            <Plus size={16} aria-hidden="true" /> Add a new address
           </button>
         )}
       </div>

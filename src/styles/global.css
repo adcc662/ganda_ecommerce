@@ -329,6 +329,21 @@ select.input {
   color: var(--lichen);
 }
 
+/* Seeded demo data must never read as a real listing. */
+.sample {
+  display: inline-block;
+  margin-right: var(--space-2);
+  padding: 0 6px;
+  border: 1px solid var(--sky);
+  border-radius: 2px;
+  color: var(--sky);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  flex: none;
+}
+
 .status {
   display: inline-flex;
   align-items: center;

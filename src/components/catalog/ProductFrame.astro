@@ -9,7 +9,7 @@ interface Props {
   size?: 'entry' | 'hero';
 }
 const { name, categoryName, subcategoryName, imageUrl, size = 'entry' } = Astro.props;
-const Icon = iconFor(categoryName);
+const Icon = iconFor(subcategoryName, categoryName);
 ---
 
 <div class:list={['frame', `frame--${size}`]}>

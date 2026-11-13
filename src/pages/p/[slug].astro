@@ -6,6 +6,7 @@ import AddToCart from '../../components/islands/AddToCart';
 import { load } from '../../lib/api/server';
 import { formatPrice, priceOf } from '../../lib/domain/money';
 import { PLATFORM_SELLER } from '../../lib/sellers/constants';
+import { isSample } from '../../lib/domain/sections';
 
 const { slug = '' } = Astro.params;
 const { data: p, error } = await load((api) => api.bySlug(slug));
@@ -51,6 +52,12 @@ const facts = p
           </div>
 
           <div class="product__info">
+            {isSample(p) && (
+              <p class="notice">
+                <span class="sample">Sample entry</span>
+                Placeholder product from the development seed data. Not a real listing.
+              </p>
+            )}
             <h1>{p.name}</h1>
             <p class="price big">
               {formatPrice(tag.current)}

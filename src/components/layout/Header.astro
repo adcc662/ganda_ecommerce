@@ -20,7 +20,7 @@ const { query = '' } = Astro.props;
       <HeaderAccount client:load />
       <a class="btn btn--act sell" href="/sell">
         <Plus size={18} aria-hidden="true" />
-        <span>Add your listing</span>
+        <span class="sell__long">Add your listing</span><span class="sell__short">Sell</span>
       </a>
     </nav>
   </div>
@@ -98,11 +98,19 @@ const { query = '' } = Astro.props;
     .bar__nav {
       margin-left: auto;
     }
-    .sell span {
+    .sell__long {
       display: none;
     }
     .sell {
-      padding-inline: var(--space-3);
+      padding-inline: var(--space-4);
+    }
+    .bar__nav :global(.cart-word) {
+      display: none;
+    }
+  }
+  @media (min-width: 761px) {
+    .sell__short {
+      display: none;
     }
   }
 </style>

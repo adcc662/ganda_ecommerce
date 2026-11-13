@@ -14,7 +14,7 @@ interface Props {
 
 /** React twin of Entry.astro, used where the entry must update live. */
 export default function EntryPreview(p: Props) {
-  const Icon = iconFor(p.categoryName || 'Other');
+  const Icon = iconFor(p.subcategoryName, p.categoryName);
   const tag = priceOf({ price: p.price || 0, discountPrice: p.discountPrice });
   const stock = p.stockQuantity === 0 ? 'Out of stock' : p.stockQuantity <= 3 ? `${p.stockQuantity} left` : `${p.stockQuantity} in stock`;
 

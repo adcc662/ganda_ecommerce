@@ -2,6 +2,7 @@
 import type { Product } from '../../lib/domain/types';
 import { formatPrice, priceOf } from '../../lib/domain/money';
 import { PLATFORM_SELLER } from '../../lib/sellers/constants';
+import { isSample } from '../../lib/domain/sections';
 import ProductFrame from './ProductFrame.astro';
 
 interface Props {
@@ -28,6 +29,7 @@ const stock = p.stockQuantity === 0 ? 'Out of stock' : p.stockQuantity <= 3 ? `$
     </div>
     {short && <blockquote class="voice"><p>“{short}”</p></blockquote>}
     <p class="meta">
+      {isSample(p) && <span class="sample">Sample entry</span>}
       {`Sold by ${PLATFORM_SELLER} · ${p.subcategoryName} · `}<span
         class:list={[{ low: p.stockQuantity > 0 && p.stockQuantity <= 3, out: p.stockQuantity === 0 }]}>{stock}</span>
     </p>
@@ -37,7 +39,7 @@ const stock = p.stockQuantity === 0 ? 'Out of stock' : p.stockQuantity <= 3 ? `$
 <style>
   .entry {
     display: grid;
-    grid-template-columns: minmax(120px, 200px) 1fr;
+    grid-template-columns: minmax(110px, 150px) 1fr;
     gap: var(--space-5);
     padding-block: var(--space-5);
     border-top: 1px solid var(--bark-rule);

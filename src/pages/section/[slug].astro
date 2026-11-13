@@ -5,7 +5,7 @@ import CatalogHead from '../../components/catalog/CatalogHead.astro';
 import EntryList from '../../components/catalog/EntryList.astro';
 import Unavailable from '../../components/catalog/Unavailable.astro';
 import { load } from '../../lib/api/server';
-import { pluralize, productsIn } from '../../lib/domain/sections';
+import { countBySection, pluralize, productsIn } from '../../lib/domain/sections';
 
 const { slug } = Astro.params;
 const sub = Astro.url.searchParams.get('sub');
@@ -27,7 +27,7 @@ const entries = data && category ? productsIn(data.products, category, activeSub
       <Unavailable message={error?.message ?? 'Try again in a moment.'} />
     ) : (
       <>
-        <SectionIndex categories={data.categories} active={category.slug} />
+        <SectionIndex categories={data.categories} active={category.slug} counts={countBySection(data.products)} />
         <div class="page">
           <CatalogHead title={activeSub ? activeSub.name : category.name} lede={category.description} crumbs={activeSub ? [{ href: `/section/${category.slug}`, label: category.name }] : []}>
             <p class="meta tnum count">{pluralize(entries.length, 'entry', 'entries')}</p>

@@ -20,7 +20,7 @@ export default function HeaderAccount() {
     <>
       <a className="btn btn--quiet" href={user ? '/cart' : '/login?next=/cart'} aria-label={`Cart${count ? `, ${count} items` : ''}`}>
         <ShoppingBag size={18} aria-hidden="true" />
-        <span className="tnum">{count ? count : 'Cart'}</span>
+        {count ? <span className="tnum">{count}</span> : <span className="cart-word">Cart</span>}
       </a>
       {user ? (
         <a className="btn btn--quiet" href="/account">

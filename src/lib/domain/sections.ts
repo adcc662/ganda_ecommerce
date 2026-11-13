@@ -1,20 +1,58 @@
-import { BookOpen, Headphones, Package, Scissors, Shirt, Sofa, Tent, type LucideIcon } from 'lucide-react';
+import {
+  Armchair,
+  Bike,
+  BookOpen,
+  Coffee,
+  CookingPot,
+  Disc3,
+  Headphones,
+  Monitor,
+  Package,
+  Scissors,
+  Shirt,
+  Sofa,
+  Tent,
+  type LucideIcon,
+} from 'lucide-react';
 import type { Category, Product } from './types';
 
-const ICONS: Record<string, LucideIcon> = {
-  outdoors: Tent,
-  handmade: Scissors,
-  home: Sofa,
-  electronics: Headphones,
-  clothing: Shirt,
-  books: BookOpen,
-};
+/** Keyword → drawn icon. Subsection keywords are checked before section keywords. */
+const SUBSECTION_ICONS: [string, LucideIcon][] = [
+  ['bike', Bike],
+  ['camp', Tent],
+  ['ceramic', Coffee],
+  ['leather', Scissors],
+  ['furniture', Armchair],
+  ['kitchen', CookingPot],
+  ['audio', Headphones],
+  ['computer', Monitor],
+  ['record', Disc3],
+  ['book', BookOpen],
+  ['outerwear', Shirt],
+];
 
-/** Drawn placeholder for listings without photos; falls back to a parcel. */
-export function iconFor(categoryName: string): LucideIcon {
-  const key = categoryName.toLowerCase();
-  const match = Object.keys(ICONS).find((k) => key.includes(k));
-  return match ? ICONS[match] : Package;
+const SECTION_ICONS: [string, LucideIcon][] = [
+  ['outdoor', Tent],
+  ['handmade', Scissors],
+  ['home', Sofa],
+  ['electronic', Headphones],
+  ['clothing', Shirt],
+  ['book', BookOpen],
+];
+
+function match(list: [string, LucideIcon][], name: string) {
+  const key = name.toLowerCase();
+  return list.find(([k]) => key.includes(k))?.[1];
+}
+
+/** Drawn placeholder for listings without photos. */
+export function iconFor(subcategoryName: string, categoryName = ''): LucideIcon {
+  return match(SUBSECTION_ICONS, subcategoryName) ?? match(SECTION_ICONS, categoryName) ?? Package;
+}
+
+/** Products created by `scripts/seed-dev.mjs` carry SAMPLE- SKUs and must read as placeholders. */
+export function isSample(product: { sku: string | null }): boolean {
+  return product.sku?.startsWith('SAMPLE-') ?? false;
 }
 
 /** The API has no category filter, so sections are derived from the active product list. */
