@@ -1,17 +1,13 @@
 ---
 import { Search, Plus } from 'lucide-react';
 import HeaderAccount from '../islands/HeaderAccount';
-import { countItems } from '../../lib/domain/cart';
-import { loadAuthed } from '../../lib/session/server';
 
 interface Props {
   query?: string;
 }
 const { query = '' } = Astro.props;
-const { user } = Astro.locals;
-// The badge is a nicety: if the cart cannot be read, the header shows "Cart" without a count.
-const cart = user && Astro.session ? await loadAuthed(Astro.session, (api) => api.cart()) : null;
-const count = cart?.data ? countItems(cart.data) : null;
+// Resolved by middleware before rendering; without a count the header shows "Cart".
+const { user, cartCount: count } = Astro.locals;
 ---
 
 <header class="bar">

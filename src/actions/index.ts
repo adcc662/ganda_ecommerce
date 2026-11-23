@@ -1,10 +1,11 @@
 import { ActionError, defineAction, type ActionAPIContext } from 'astro:actions';
 import { z } from 'astro/zod';
 import { accountApi, API_URL } from '../lib/api/client';
-import { describeApiError } from '../lib/api/errors';
+import { describeApiError, invalidFields } from '../lib/api/errors';
 import { ApiError, createHttp } from '../lib/api/http';
 import { countItems } from '../lib/domain/cart';
 import type { AuthResponse } from '../lib/domain/types';
+import { loginInput, registerInput } from '../lib/session/forms';
 import { withAccount } from '../lib/session/server';
 
 /**
@@ -44,19 +45,13 @@ async function startSession(context: ActionAPIContext, { token, ...user }: AuthR
 
 const anonymous = () => accountApi(createHttp({ baseUrl: API_URL, getToken: () => null }));
 
-const text = (message: string) => z.string().trim().min(1, message);
-const optionalText = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => v || undefined);
 const id = z.number().int().positive();
 
 export const server = {
   auth: {
     login: defineAction({
       accept: 'form',
-      input: z.object({ email: text('Enter your email.'), password: z.string().min(1, 'Enter your password.') }),
+      input: loginInput,
       handler: async ({ email, password }, context) => {
         try {
           return { user: await startSession(context, await anonymous().login(email, password)) };
@@ -71,17 +66,15 @@ export const server = {
 
     register: defineAction({
       accept: 'form',
-      input: z.object({
-        firstName: text('Enter your first name.'),
-        lastName: text('Enter your last name.'),
-        email: text('Enter your email.'),
-        password: z.string().min(1, 'Choose a password.'),
-        phone: optionalText,
-      }),
-      handler: async (input, context) => {
+      input: registerInput,
+      handler: async ({ phone, ...input }, context) => {
         try {
-          return { user: await startSession(context, await anonymous().register(input)) };
+          const response = await anonymous().register({ ...input, phone: phone || undefined });
+          return { user: await startSession(context, response), invalid: null };
         } catch (e) {
+          // API validation failures come back as data so the form shows each message under its field.
+          const invalid = invalidFields(e);
+          if (invalid) return { user: null, invalid };
           fail(e);
         }
       },
@@ -145,7 +138,16 @@ export const server = {
         country: z.string(),
         isDefault: z.boolean(),
       }),
-      handler: (input, context) => account(context, (api) => api.createAddress(input)),
+      handler: (input, context) =>
+        account(context, async (api) => {
+          try {
+            return { address: await api.createAddress(input), invalid: null };
+          } catch (e) {
+            const invalid = invalidFields(e);
+            if (invalid) return { address: null, invalid };
+            throw e;
+          }
+        }),
     }),
   },
 

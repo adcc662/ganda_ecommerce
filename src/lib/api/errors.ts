@@ -22,3 +22,17 @@ export function describeApiError(e: unknown): ErrorDescription {
   }
   return { status: e.status === 0 ? 503 : e.status, message };
 }
+
+export interface InvalidFields {
+  message: string;
+  fieldErrors: Record<string, string>;
+}
+
+/**
+ * A validation failure from the API (an error with per-field messages), or null.
+ * Forms get these back as action data so each message shows under its field.
+ */
+export function invalidFields(e: unknown): InvalidFields | null {
+  if (e instanceof ApiError && Object.keys(e.fieldErrors).length > 0) return { message: e.message, fieldErrors: e.fieldErrors };
+  return null;
+}

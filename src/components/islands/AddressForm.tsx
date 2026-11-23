@@ -22,7 +22,7 @@ export default function AddressForm({ type, onSaved, onCancel }: Props) {
     setBusy(true);
     setError('');
     setFields({});
-    const { data: saved, error: failure } = await actions.addresses.create({
+    const { data, error: failure } = await actions.addresses.create({
       addressType: type,
       streetAddress: v('streetAddress'),
       apartment: v('apartment') || null,
@@ -38,7 +38,12 @@ export default function AddressForm({ type, onSaved, onCancel }: Props) {
       setError(failureOf(failure));
       return;
     }
-    onSaved(saved);
+    if (data.invalid) {
+      setFields(data.invalid.fieldErrors);
+      setError(data.invalid.message);
+      return;
+    }
+    onSaved(data.address);
   }
 
   const input = (name: string, label: string, autoComplete: string, opts: { required?: boolean; defaultValue?: string } = {}) => (

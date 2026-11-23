@@ -18,7 +18,7 @@ describe('safeNext', () => {
     expect(safeNext('/orders/3?placed=1')).toBe('/orders/3?placed=1');
   });
 
-  it.each([null, '', '//evil.example', 'https://evil.example', '/\\evil.example', 'javascript:alert(1)'])(
+  it.each([null, '', '//evil.example', 'https://evil.example', '/\\evil.example', 'javascript:alert(1)', '/\t/evil.example', '/\n/evil.example', '/\r/evil.example'])(
     'falls back to / for %s',
     (next) => expect(safeNext(next)).toBe('/'),
   );

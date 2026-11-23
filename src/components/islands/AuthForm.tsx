@@ -15,10 +15,16 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
     setError('');
     setFields({});
     // The server action calls the API and stores the JWT in the session; the browser only receives the session cookie.
-    const { error: failure } = mode === 'login' ? await actions.auth.login(form) : await actions.auth.register(form);
-    if (failure) {
-      setFields(fieldErrorsOf(failure));
-      setError(messageOf(failure));
+    const result = mode === 'login' ? await actions.auth.login(form) : await actions.auth.register(form);
+    if (result.error) {
+      setFields(fieldErrorsOf(result.error));
+      setError(messageOf(result.error));
+      setBusy(false);
+      return;
+    }
+    if ('invalid' in result.data && result.data.invalid) {
+      setFields(result.data.invalid.fieldErrors);
+      setError(result.data.invalid.message);
       setBusy(false);
       return;
     }

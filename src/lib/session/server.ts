@@ -1,9 +1,12 @@
 import { accountApi, API_URL, type AccountApi } from '../api/client';
 import { ApiError, createHttp } from '../api/http';
+import { countItems } from '../domain/cart';
+import type { AuthUser } from '../domain/types';
 
 /** The slice of `AstroSession` this module needs, so it can be tested without Astro. */
 export interface SessionStore {
   get(key: 'token'): Promise<string | undefined>;
+  get(key: 'user'): Promise<AuthUser | undefined>;
   destroy(): void;
 }
 
@@ -42,4 +45,20 @@ export async function loadAuthed<T>(
     const error = e instanceof ApiError ? e : new ApiError(500, 'Something went wrong loading your account.');
     return { data: null, error };
   }
+}
+
+/**
+ * Who is visiting, decided before the page renders (called from middleware).
+ * The cart read doubles as a token check: if the API rejects the token, the session ends here,
+ * while it can still change the response, and the request continues logged out.
+ */
+export async function resolveRequest(
+  session: SessionStore,
+  makeApi?: (token: string) => AccountApi,
+): Promise<{ user: AuthUser | null; cartCount: number | null }> {
+  const user = (await session.get('user')) ?? null;
+  if (!user) return { user: null, cartCount: null };
+  const cart = await loadAuthed(session, (api) => api.cart(), makeApi);
+  if (cart.error?.status === 401) return { user: null, cartCount: null };
+  return { user, cartCount: cart.data ? countItems(cart.data) : null };
 }
