@@ -1,36 +1,24 @@
-import { useEffect, useState } from 'react';
+import { actions } from 'astro:actions';
+import { useState } from 'react';
 import { ORDER_STATUS, PAYMENT_STATUS, formatDate, paymentMethodLabel } from '../../lib/domain/labels';
 import { formatPrice } from '../../lib/domain/money';
 import type { Order, Payment, PaymentMethod } from '../../lib/domain/types';
-import { api } from '../../lib/session/session';
-import { Loading, Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
+import { Notice, failureOf } from './ui';
 
-export default function OrderDetail({ orderId }: { orderId: number }) {
-  const user = useAuthed();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [methodId, setMethodId] = useState<number | null>(null);
-  const [error, setError] = useState('');
+interface Props {
+  /** Loaded on the server by the page. */
+  order: Order;
+  initialPayments: Payment[];
+  methods: PaymentMethod[];
+  /** The visitor just placed this order (?placed=1). */
+  placed: boolean;
+}
+
+export default function OrderDetail({ order, initialPayments, methods, placed }: Props) {
+  const [payments, setPayments] = useState(initialPayments);
+  const [methodId, setMethodId] = useState<number | null>(methods[0]?.id ?? null);
   const [payError, setPayError] = useState('');
   const [paying, setPaying] = useState(false);
-  const placed = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('placed');
-
-  useEffect(() => {
-    if (!user) return;
-    Promise.all([api.order(orderId), api.payments(orderId), api.paymentMethods()])
-      .then(([o, p, m]) => {
-        setOrder(o);
-        setPayments(p);
-        setMethods(m);
-        setMethodId(m[0]?.id ?? null);
-      })
-      .catch((e) => setError(messageOf(e)));
-  }, [user, orderId]);
-
-  if (!user || (!order && !error)) return <Loading lines={4} />;
-  if (!order) return <Notice tone="error">{error}</Notice>;
 
   const active = payments.find((p) => p.status === 'PENDING' || p.status === 'COMPLETED');
   const status =
@@ -43,14 +31,10 @@ export default function OrderDetail({ orderId }: { orderId: number }) {
     if (methodId === null) return;
     setPaying(true);
     setPayError('');
-    try {
-      const payment = await api.pay(orderId, methodId);
-      setPayments((list) => [...list, payment]);
-    } catch (e) {
-      setPayError(messageOf(e));
-    } finally {
-      setPaying(false);
-    }
+    const { data: payment, error: failure } = await actions.orders.pay({ orderId: order.id, paymentMethodId: methodId });
+    if (failure) setPayError(failureOf(failure));
+    else setPayments((list) => [...list, payment]);
+    setPaying(false);
   }
 
   return (

@@ -1,8 +1,24 @@
 ---
 import AppPage from '../components/layout/AppPage.astro';
 import CartView from '../components/islands/CartView';
+import { Notice } from '../components/islands/ui';
+import { catalogApi } from '../lib/api/client';
+import type { Product } from '../lib/domain/types';
+import { loginHref } from '../lib/session/routes';
+import { loadAuthed } from '../lib/session/server';
+
+const { data: items, error } = await loadAuthed(Astro.session!, (api) => api.cart());
+if (error?.status === 401) return Astro.redirect(loginHref(Astro.url.pathname));
+
+// The cart API returns no description, so the seller's words come from the catalog. Missing entries are skipped.
+const details: Record<string, Product> = {};
+if (items) {
+  const catalog = catalogApi();
+  const results = await Promise.allSettled(items.map((i) => catalog.bySlug(i.productSlug)));
+  for (const r of results) if (r.status === 'fulfilled') details[r.value.slug] = r.value;
+}
 ---
 
 <AppPage title="Your cart">
-  <CartView client:load />
+  {items ? <CartView client:load initialItems={items} details={details} /> : <Notice tone="error">{error?.message}</Notice>}
 </AppPage>

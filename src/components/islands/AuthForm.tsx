@@ -1,11 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { api, signIn } from '../../lib/session/session';
+import { actions } from 'astro:actions';
+import { safeNext } from '../../lib/session/routes';
 import { Field, Notice, fieldErrorsOf, messageOf } from './ui';
-
-function safeNext(): string {
-  const next = new URLSearchParams(window.location.search).get('next') ?? '/';
-  return next.startsWith('/') && !next.startsWith('//') ? next : '/';
-}
 
 export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const [busy, setBusy] = useState(false);
@@ -15,32 +11,18 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const value = (k: string) => String(form.get(k) ?? '').trim();
     setBusy(true);
     setError('');
     setFields({});
-    try {
-      const session =
-        mode === 'login'
-          ? await api.login(value('email'), String(form.get('password') ?? ''))
-          : await api.register({
-              email: value('email'),
-              password: String(form.get('password') ?? ''),
-              firstName: value('firstName'),
-              lastName: value('lastName'),
-              phone: value('phone') || undefined,
-            });
-      signIn(session);
-      window.location.assign(safeNext());
-    } catch (err) {
-      setFields(fieldErrorsOf(err));
-      setError(
-        mode === 'login' && (err as { status?: number }).status === 401
-          ? 'That email and password do not match an account.'
-          : messageOf(err),
-      );
+    // The server action calls the API and stores the JWT in the session; the browser only receives the session cookie.
+    const { error: failure } = mode === 'login' ? await actions.auth.login(form) : await actions.auth.register(form);
+    if (failure) {
+      setFields(fieldErrorsOf(failure));
+      setError(messageOf(failure));
       setBusy(false);
+      return;
     }
+    window.location.assign(safeNext(new URLSearchParams(window.location.search).get('next')));
   }
 
   const other = mode === 'login' ? '/register' : '/login';

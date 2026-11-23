@@ -1,13 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import type { Category } from '../../lib/domain/types';
+import type { AuthUser, Category } from '../../lib/domain/types';
 import { IS_MOCK_SELLER_BACKEND, listings } from '../../lib/sellers';
 import { adBudget } from '../../lib/sellers/localListingRepository';
 import EntryPreview from './EntryPreview';
 import { Field, Notice, fieldErrorsOf, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
 
-export default function ListingComposer({ categories }: { categories: Category[] }) {
-  const user = useAuthed();
+export default function ListingComposer({ categories, user }: { categories: Category[]; user: AuthUser }) {
   const [subId, setSubId] = useState<number | ''>('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -17,8 +15,6 @@ export default function ListingComposer({ categories }: { categories: Category[]
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-
-  if (!user) return null;
 
   const category = categories.find((c) => c.subcategories.some((s) => s.id === subId));
   const sub = category?.subcategories.find((s) => s.id === subId);
@@ -39,7 +35,7 @@ export default function ListingComposer({ categories }: { categories: Category[]
     setBusy(true);
     try {
       await listings().create(
-        { email: user!.email, displayName: sellerName },
+        { email: user.email, displayName: sellerName },
         {
           subcategoryId: sub!.id,
           subcategoryName: sub!.name,

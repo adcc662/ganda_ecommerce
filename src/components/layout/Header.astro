@@ -1,11 +1,17 @@
 ---
 import { Search, Plus } from 'lucide-react';
 import HeaderAccount from '../islands/HeaderAccount';
+import { countItems } from '../../lib/domain/cart';
+import { loadAuthed } from '../../lib/session/server';
 
 interface Props {
   query?: string;
 }
 const { query = '' } = Astro.props;
+const { user } = Astro.locals;
+// The badge is a nicety: if the cart cannot be read, the header shows "Cart" without a count.
+const cart = user && Astro.session ? await loadAuthed(Astro.session, (api) => api.cart()) : null;
+const count = cart?.data ? countItems(cart.data) : null;
 ---
 
 <header class="bar">
@@ -17,7 +23,7 @@ const { query = '' } = Astro.props;
       <input id="q" name="q" type="search" value={query} placeholder="Search the catalog" autocomplete="off" />
     </form>
     <nav class="bar__nav" aria-label="Account">
-      <HeaderAccount client:load />
+      <HeaderAccount client:idle firstName={user?.firstName ?? null} count={count} />
       <a class="btn btn--act sell" href="/sell">
         <Plus size={18} aria-hidden="true" />
         <span class="sell__long">Add your listing</span><span class="sell__short">Sell</span>

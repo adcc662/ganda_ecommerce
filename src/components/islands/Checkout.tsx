@@ -1,39 +1,31 @@
+import { actions } from 'astro:actions';
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { formatPrice } from '../../lib/domain/money';
 import type { Address, CartItem } from '../../lib/domain/types';
-import { api, refreshCartCount } from '../../lib/session/session';
+import { $cartCount } from '../../lib/session/session';
 import AddressForm, { formatAddress } from './AddressForm';
-import { Loading, Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
+import { Notice, failureOf } from './ui';
 
-export default function Checkout() {
-  const user = useAuthed();
-  const [cart, setCart] = useState<CartItem[] | null>(null);
-  const [addresses, setAddresses] = useState<Address[] | null>(null);
-  const [shippingId, setShippingId] = useState<number | null>(null);
+interface Props {
+  /** Cart and saved addresses as the server loaded them. */
+  cart: CartItem[];
+  savedAddresses: Address[];
+}
+
+function pick(saved: Address[], type: string) {
+  return saved.find((a) => a.addressType === type && a.isDefault) ?? saved.find((a) => a.addressType === type);
+}
+
+export default function Checkout({ cart, savedAddresses }: Props) {
+  const [addresses, setAddresses] = useState(savedAddresses);
+  const [shippingId, setShippingId] = useState<number | null>(pick(savedAddresses, 'SHIPPING')?.id ?? savedAddresses[0]?.id ?? null);
   const [billingSame, setBillingSame] = useState(true);
-  const [billingId, setBillingId] = useState<number | null>(null);
-  const [adding, setAdding] = useState<'SHIPPING' | 'BILLING' | null>(null);
+  const [billingId, setBillingId] = useState<number | null>(pick(savedAddresses, 'BILLING')?.id ?? null);
+  const [adding, setAdding] = useState<'SHIPPING' | 'BILLING' | null>(savedAddresses.length ? null : 'SHIPPING');
   const [error, setError] = useState('');
   const [placing, setPlacing] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    Promise.all([api.cart(), api.addresses()])
-      .then(([items, saved]) => {
-        setCart(items);
-        setAddresses(saved);
-        const pick = (t: string) => saved.find((a) => a.addressType === t && a.isDefault) ?? saved.find((a) => a.addressType === t);
-        setShippingId(pick('SHIPPING')?.id ?? saved[0]?.id ?? null);
-        setBillingId(pick('BILLING')?.id ?? null);
-        if (!saved.length) setAdding('SHIPPING');
-      })
-      .catch((e) => setError(messageOf(e)));
-  }, [user]);
-
-  if (!user || ((cart === null || addresses === null) && !error)) return <Loading lines={4} />;
-  if (cart === null || addresses === null) return <Notice tone="error">{error}</Notice>;
   if (cart.length === 0) {
     return (
       <Notice>
@@ -47,29 +39,25 @@ export default function Checkout() {
   const ready = shippingId !== null && effectiveBilling !== null && !placing;
 
   function saved(address: Address) {
-    setAddresses((list) => [...(list ?? []), address]);
+    setAddresses((list) => [...list, address]);
     if (adding === 'BILLING') setBillingId(address.id);
     else setShippingId(address.id);
     setAdding(null);
   }
 
   async function place() {
-    if (shippingId === null || effectiveBilling === null || !cart) return;
+    if (shippingId === null || effectiveBilling === null) return;
     setPlacing(true);
     setError('');
-    try {
-      const order = await api.placeOrder({
-        shippingAddressId: shippingId,
-        billingAddressId: effectiveBilling,
-        items: cart.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      });
-      await api.clearCart().catch(() => undefined);
-      await refreshCartCount();
-      window.location.assign(`/orders/${order.id}?placed=1`);
-    } catch (e) {
-      setError(messageOf(e));
+    // The server orders what is in the session's cart and empties it.
+    const { data, error: failure } = await actions.orders.place({ shippingAddressId: shippingId, billingAddressId: effectiveBilling });
+    if (failure) {
+      setError(failureOf(failure));
       setPlacing(false);
+      return;
     }
+    $cartCount.set(0);
+    window.location.assign(`/orders/${data.orderId}?placed=1`);
   }
 
   const choices = (type: 'SHIPPING' | 'BILLING', selected: number | null, onPick: (id: number) => void) => {

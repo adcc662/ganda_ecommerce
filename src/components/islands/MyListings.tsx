@@ -2,28 +2,26 @@ import { useEffect, useState } from 'react';
 import { formatDate } from '../../lib/domain/labels';
 import { IS_MOCK_SELLER_BACKEND, listings } from '../../lib/sellers';
 import type { Listing } from '../../lib/sellers/listings';
+import type { AuthUser } from '../../lib/domain/types';
 import EntryPreview from './EntryPreview';
 import { Loading, Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
 
-export default function MyListings() {
-  const user = useAuthed();
+export default function MyListings({ user }: { user: AuthUser }) {
   const [items, setItems] = useState<Listing[] | null>(null);
   const [error, setError] = useState('');
   const added = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('added');
 
   useEffect(() => {
-    if (!user) return;
     listings().listByOwner(user.email).then(setItems).catch((e) => setError(messageOf(e)));
-  }, [user]);
+  }, [user.email]);
 
-  if (!user || (items === null && !error)) return <Loading lines={3} />;
+  if (items === null && !error) return <Loading lines={3} />;
   if (items === null) return <Notice tone="error">{error}</Notice>;
 
   async function patch(id: string, change: Partial<Listing>) {
     setError('');
     try {
-      const next = await listings().update(user!.email, id, change);
+      const next = await listings().update(user.email, id, change);
       setItems((list) => list?.map((l) => (l.id === id ? next : l)) ?? null);
     } catch (e) {
       setError(messageOf(e));
@@ -32,7 +30,7 @@ export default function MyListings() {
 
   async function remove(l: Listing) {
     if (!window.confirm(`Take “${l.name}” out of the catalog? This cannot be undone.`)) return;
-    await listings().remove(user!.email, l.id);
+    await listings().remove(user.email, l.id);
     setItems((list) => list?.filter((x) => x.id !== l.id) ?? null);
   }
 

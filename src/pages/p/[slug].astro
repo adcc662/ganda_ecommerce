@@ -71,7 +71,7 @@ const facts = p
               </blockquote>
             )}
 
-            <AddToCart client:load productId={p.id} productName={p.name} stock={p.stockQuantity} />
+            <AddToCart client:visible loggedIn={Astro.locals.user !== null} productId={p.id} productName={p.name} stock={p.stockQuantity} />
 
             <dl class="facts">
               {facts.map(([k, v]) => (

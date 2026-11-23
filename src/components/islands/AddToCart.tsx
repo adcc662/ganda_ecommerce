@@ -1,17 +1,19 @@
-import { useStore } from '@nanostores/react';
+import { actions } from 'astro:actions';
 import { Minus, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { $user, api, loginHref, refreshCartCount } from '../../lib/session/session';
-import { Notice, messageOf } from './ui';
+import { loginHref } from '../../lib/session/routes';
+import { $cartCount } from '../../lib/session/session';
+import { Notice, failureOf } from './ui';
 
 interface Props {
   productId: number;
   productName: string;
   stock: number;
+  /** From the server session; visitors are sent to log in before adding. */
+  loggedIn: boolean;
 }
 
-export default function AddToCart({ productId, productName, stock }: Props) {
-  const user = useStore($user);
+export default function AddToCart({ productId, productName, stock, loggedIn }: Props) {
   const [qty, setQty] = useState(1);
   const [state, setState] = useState<'idle' | 'busy' | 'added' | 'error'>('idle');
   const [error, setError] = useState('');
@@ -21,19 +23,19 @@ export default function AddToCart({ productId, productName, stock }: Props) {
   }
 
   async function add() {
-    if (!user) {
+    if (!loggedIn) {
       window.location.href = loginHref(window.location.pathname);
       return;
     }
     setState('busy');
-    try {
-      await api.addToCart(productId, qty);
-      await refreshCartCount();
-      setState('added');
-    } catch (e) {
-      setError(messageOf(e));
+    const { data, error: failure } = await actions.cart.add({ productId, quantity: qty });
+    if (failure) {
+      setError(failureOf(failure));
       setState('error');
+      return;
     }
+    $cartCount.set(data.count);
+    setState('added');
   }
 
   return (

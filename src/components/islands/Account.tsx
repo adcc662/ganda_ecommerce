@@ -1,26 +1,28 @@
 import { useState } from 'react';
-import { api, signOut } from '../../lib/session/session';
-import { Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
+import { actions } from 'astro:actions';
+import type { AuthUser } from '../../lib/domain/types';
+import { Notice, failureOf } from './ui';
 
-export default function Account() {
-  const user = useAuthed();
+export default function Account({ user }: { user: AuthUser }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  if (!user) return null;
+  async function logout() {
+    setBusy(true);
+    await actions.auth.logout();
+    window.location.assign('/');
+  }
 
   async function logoutEverywhere() {
     if (!window.confirm('Log out on every device? You will need to log in again here too.')) return;
     setBusy(true);
-    try {
-      await api.logoutAll();
-      signOut();
-      window.location.assign('/');
-    } catch (e) {
-      setError(messageOf(e));
+    const { error: failure } = await actions.auth.logoutAll();
+    if (failure) {
+      setError(failureOf(failure));
       setBusy(false);
+      return;
     }
+    window.location.assign('/');
   }
 
   return (
@@ -38,7 +40,7 @@ export default function Account() {
         <h2>Sessions</h2>
         {error && <Notice tone="error">{error}</Notice>}
         <div className="account__actions">
-          <button className="btn" onClick={() => { signOut(); window.location.assign('/'); }}>Log out</button>
+          <button className="btn" onClick={logout} disabled={busy}>Log out</button>
           <button className="btn btn--danger" onClick={logoutEverywhere} disabled={busy}>
             {busy ? 'Logging out…' : 'Log out on every device'}
           </button>

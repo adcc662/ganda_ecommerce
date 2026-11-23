@@ -8,5 +8,5 @@ const { data: categories, error } = await load((api) => api.categories());
 ---
 
 <AppPage title="Add your listing" lede="Anything you own or make. Write it the way you would describe it to a friend: your words become the entry.">
-  {error || !categories ? <Unavailable message={error?.message ?? 'Try again in a moment.'} /> : <ListingComposer client:load categories={categories} />}
+  {error || !categories ? <Unavailable message={error?.message ?? 'Try again in a moment.'} /> : <ListingComposer client:load categories={categories} user={Astro.locals.user!} />}
 </AppPage>

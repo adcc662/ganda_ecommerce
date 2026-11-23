@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import type { Address, AddressType } from '../../lib/domain/types';
-import { api } from '../../lib/session/session';
-import { Field, Notice, fieldErrorsOf, messageOf } from './ui';
+import { actions } from 'astro:actions';
+import { Field, Notice, failureOf, fieldErrorsOf } from './ui';
 
 interface Props {
   type: AddressType;
@@ -22,24 +22,23 @@ export default function AddressForm({ type, onSaved, onCancel }: Props) {
     setBusy(true);
     setError('');
     setFields({});
-    try {
-      const saved = await api.createAddress({
-        addressType: type,
-        streetAddress: v('streetAddress'),
-        apartment: v('apartment') || null,
-        city: v('city'),
-        stateProvince: v('stateProvince'),
-        postalCode: v('postalCode'),
-        country: v('country'),
-        isDefault: f.get('isDefault') === 'on',
-      });
-      onSaved(saved);
-    } catch (err) {
-      setFields(fieldErrorsOf(err));
-      setError(messageOf(err));
-    } finally {
-      setBusy(false);
+    const { data: saved, error: failure } = await actions.addresses.create({
+      addressType: type,
+      streetAddress: v('streetAddress'),
+      apartment: v('apartment') || null,
+      city: v('city'),
+      stateProvince: v('stateProvince'),
+      postalCode: v('postalCode'),
+      country: v('country'),
+      isDefault: f.get('isDefault') === 'on',
+    });
+    setBusy(false);
+    if (failure) {
+      setFields(fieldErrorsOf(failure));
+      setError(failureOf(failure));
+      return;
     }
+    onSaved(saved);
   }
 
   const input = (name: string, label: string, autoComplete: string, opts: { required?: boolean; defaultValue?: string } = {}) => (

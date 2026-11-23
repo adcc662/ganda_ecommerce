@@ -1,8 +1,14 @@
 ---
 import AppPage from '../../components/layout/AppPage.astro';
 import OrdersList from '../../components/islands/OrdersList';
+import { Notice } from '../../components/islands/ui';
+import { loginHref } from '../../lib/session/routes';
+import { loadAuthed } from '../../lib/session/server';
+
+const { data: orders, error } = await loadAuthed(Astro.session!, (api) => api.myOrders());
+if (error?.status === 401) return Astro.redirect(loginHref(Astro.url.pathname));
 ---
 
 <AppPage title="Your orders" lede="Everything you have bought on Ganda, newest first.">
-  <OrdersList client:load />
+  {orders ? <OrdersList orders={orders} /> : <Notice tone="error">{error?.message}</Notice>}
 </AppPage>

@@ -1,8 +1,14 @@
 ---
 import AppPage from '../components/layout/AppPage.astro';
 import Checkout from '../components/islands/Checkout';
+import { Notice } from '../components/islands/ui';
+import { loginHref } from '../lib/session/routes';
+import { loadAuthed } from '../lib/session/server';
+
+const { data, error } = await loadAuthed(Astro.session!, (api) => Promise.all([api.cart(), api.addresses()]));
+if (error?.status === 401) return Astro.redirect(loginHref(Astro.url.pathname));
 ---
 
 <AppPage title="Check out">
-  <Checkout client:load />
+  {data ? <Checkout client:load cart={data[0]} savedAddresses={data[1]} /> : <Notice tone="error">{error?.message}</Notice>}
 </AppPage>

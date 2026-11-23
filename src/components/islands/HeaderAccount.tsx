@@ -1,31 +1,29 @@
 import { useStore } from '@nanostores/react';
 import { ShoppingBag, UserRound } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { $cartCount, $user, refreshCartCount } from '../../lib/session/session';
+import { $cartCount } from '../../lib/session/session';
 
-export default function HeaderAccount() {
-  const user = useStore($user);
-  const count = useStore($cartCount);
-  const [mounted, setMounted] = useState(false);
+interface Props {
+  /** First name of the logged-in user, or null for visitors. Rendered on the server from the session. */
+  firstName: string | null;
+  /** Cart units when the page was rendered. */
+  count: number | null;
+}
 
-  useEffect(() => {
-    setMounted(true);
-    refreshCartCount();
-  }, [user?.email]);
-
-  // Server render has no session; avoid a flash of the wrong state.
-  if (!mounted) return <div style={{ width: 168 }} aria-hidden="true" />;
+export default function HeaderAccount({ firstName, count: rendered }: Props) {
+  // A cart change on this page (add to cart, cart view) updates the store; until then show the server's count.
+  const changed = useStore($cartCount);
+  const count = changed ?? rendered;
 
   return (
     <>
-      <a className="btn btn--quiet" href={user ? '/cart' : '/login?next=/cart'} aria-label={`Cart${count ? `, ${count} items` : ''}`}>
+      <a className="btn btn--quiet" href="/cart" aria-label={`Cart${count ? `, ${count} items` : ''}`}>
         <ShoppingBag size={18} aria-hidden="true" />
         {count ? <span className="tnum">{count}</span> : <span className="cart-word">Cart</span>}
       </a>
-      {user ? (
+      {firstName ? (
         <a className="btn btn--quiet" href="/account">
           <UserRound size={18} aria-hidden="true" />
-          <span>{user.firstName}</span>
+          <span>{firstName}</span>
         </a>
       ) : (
         <a className="btn btn--quiet" href="/login">

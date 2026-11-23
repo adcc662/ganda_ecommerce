@@ -1,11 +1,27 @@
 ---
 import AppPage from '../../components/layout/AppPage.astro';
 import OrderDetail from '../../components/islands/OrderDetail';
+import { Notice } from '../../components/islands/ui';
+import { loginHref } from '../../lib/session/routes';
+import { loadAuthed } from '../../lib/session/server';
 
 const id = Number(Astro.params.id);
 if (!Number.isInteger(id) || id <= 0) return Astro.redirect('/404');
+
+const { data, error } = await loadAuthed(Astro.session!, (api) =>
+  Promise.all([api.order(id), api.payments(id), api.paymentMethods()]),
+);
+if (error?.status === 401) return Astro.redirect(loginHref(Astro.url.pathname + Astro.url.search));
+if (error?.status === 404 || error?.status === 403) return Astro.redirect('/404');
+const placed = Astro.url.searchParams.has('placed');
 ---
 
 <AppPage title="Order details" narrow={false}>
-  <OrderDetail client:load orderId={id} />
+  {
+    data ? (
+      <OrderDetail client:load order={data[0]} initialPayments={data[1]} methods={data[2]} placed={placed} />
+    ) : (
+      <Notice tone="error">{error?.message}</Notice>
+    )
+  }
 </AppPage>

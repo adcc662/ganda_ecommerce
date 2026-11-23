@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { ApiError } from '../../lib/api/http';
+import { isActionError, isInputError } from 'astro:actions';
+import { loginHref } from '../../lib/session/routes';
 
 export function Notice({ tone = 'info', children }: { tone?: 'info' | 'error' | 'ok'; children: ReactNode }) {
   const Icon = tone === 'error' ? AlertTriangle : tone === 'ok' ? CheckCircle2 : Info;
@@ -32,18 +33,27 @@ export function Field({
   );
 }
 
+/** Visitor-facing message. Action errors already carry it (wait times and API field errors are folded in on the server). */
 export function messageOf(e: unknown): string {
-  if (e instanceof ApiError) {
-    if (e.status === 429 && e.retryAfterSeconds) {
-      const minutes = Math.ceil(e.retryAfterSeconds / 60);
-      return `${e.message}. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`;
-    }
-    return e.message;
-  }
-  return e instanceof Error ? e.message : 'Something went wrong.';
+  if (isInputError(e)) return 'Check the highlighted fields.';
+  return e instanceof Error && e.message ? e.message : 'Something went wrong.';
 }
 
+/** For logged-in actions: an ended session sends the visitor to log in; otherwise returns the message to show. */
+export function failureOf(e: unknown): string {
+  if (isActionError(e) && e.code === 'UNAUTHORIZED') {
+    window.location.assign(loginHref(window.location.pathname + window.location.search));
+  }
+  return messageOf(e);
+}
+
+/** One message per field: from an action's input validation, or from errors that carry `fieldErrors` (seller listings). */
 export function fieldErrorsOf(e: unknown): Record<string, string> {
+  if (isInputError(e)) {
+    const fields: Record<string, string> = {};
+    for (const [name, messages] of Object.entries(e.fields)) if (messages?.[0]) fields[name] = messages[0];
+    return fields;
+  }
   if (e && typeof e === 'object' && 'fieldErrors' in e) return (e as { fieldErrors: Record<string, string> }).fieldErrors;
   return {};
 }

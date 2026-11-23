@@ -1,58 +1,44 @@
+import { actions } from 'astro:actions';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { formatPrice } from '../../lib/domain/money';
 import type { CartItem, Product } from '../../lib/domain/types';
-import { catalogApi } from '../../lib/api/client';
 import { iconFor } from '../../lib/domain/sections';
-import { api, refreshCartCount } from '../../lib/session/session';
-import { Loading, Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
+import { $cartCount } from '../../lib/session/session';
+import { Notice, failureOf } from './ui';
 
-export default function CartView() {
-  const user = useAuthed();
-  const [items, setItems] = useState<CartItem[] | null>(null);
+interface Props {
+  /** The cart as the server loaded it. */
+  initialItems: CartItem[];
+  /** Catalog entries by slug: the cart API returns no description, so the seller's words come from the catalog. */
+  details: Record<string, Product>;
+}
+
+export default function CartView({ initialItems, details }: Props) {
+  const [items, setItems] = useState(initialItems);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [details, setDetails] = useState<Record<string, Product>>({});
-
-  useEffect(() => {
-    if (!user) return;
-    api
-      .cart()
-      .then((list) => {
-        setItems(list);
-        // The cart API returns no description, so the seller's words come from the catalog.
-        const catalog = catalogApi();
-        Promise.allSettled(list.map((i) => catalog.bySlug(i.productSlug))).then((results) => {
-          const found: Record<string, Product> = {};
-          results.forEach((r) => r.status === 'fulfilled' && (found[r.value.slug] = r.value));
-          setDetails(found);
-        });
-      })
-      .catch((e) => setError(messageOf(e)));
-  }, [user]);
 
   async function change(productId: number, quantity: number) {
     setBusyId(productId);
     setError('');
-    try {
-      if (quantity <= 0) {
-        await api.removeFromCart(productId);
-        setItems((list) => list?.filter((i) => i.productId !== productId) ?? null);
-      } else {
-        const updated = await api.updateCart(productId, quantity);
-        setItems((list) => list?.map((i) => (i.productId === productId ? updated : i)) ?? null);
+    if (quantity <= 0) {
+      const { data, error: failure } = await actions.cart.remove({ productId });
+      if (failure) setError(failureOf(failure));
+      else {
+        setItems((list) => list.filter((i) => i.productId !== productId));
+        $cartCount.set(data.count);
       }
-      refreshCartCount();
-    } catch (e) {
-      setError(messageOf(e));
-    } finally {
-      setBusyId(null);
+    } else {
+      const { data, error: failure } = await actions.cart.update({ productId, quantity });
+      if (failure) setError(failureOf(failure));
+      else {
+        setItems((list) => list.map((i) => (i.productId === productId ? data.item : i)));
+        $cartCount.set(data.count);
+      }
     }
+    setBusyId(null);
   }
-
-  if (!user || (items === null && !error)) return <Loading lines={3} />;
-  if (items === null) return <Notice tone="error">{error}</Notice>;
 
   if (items.length === 0) {
     return (

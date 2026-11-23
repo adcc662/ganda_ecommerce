@@ -1,26 +1,11 @@
-import { useEffect, useState } from 'react';
 import { ORDER_STATUS, formatDate } from '../../lib/domain/labels';
 import { formatPrice } from '../../lib/domain/money';
 import type { Order } from '../../lib/domain/types';
-import { api } from '../../lib/session/session';
-import { Loading, Notice, messageOf } from './ui';
-import { useAuthed } from './useAuthed';
+import { Notice } from './ui';
 
-export default function OrdersList() {
-  const user = useAuthed();
-  const [orders, setOrders] = useState<Order[] | null>(null);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!user) return;
-    api
-      .myOrders()
-      .then((list) => setOrders([...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt))))
-      .catch((e) => setError(messageOf(e)));
-  }, [user]);
-
-  if (!user || (orders === null && !error)) return <Loading lines={4} />;
-  if (orders === null) return <Notice tone="error">{error}</Notice>;
+/** Presentational: the page loads the orders on the server and renders this without hydration. */
+export default function OrdersList({ orders: unsorted }: { orders: Order[] }) {
+  const orders = [...unsorted].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   if (orders.length === 0) {
     return (
       <Notice>

@@ -5,7 +5,7 @@ import MyListings from '../../components/islands/MyListings';
 
 <AppPage title="Your listings" lede="Everything you are selling, exactly as buyers see it.">
   <div class="actions"><a class="btn btn--act" href="/sell">Add another</a></div>
-  <MyListings client:load />
+  <MyListings client:load user={Astro.locals.user!} />
 </AppPage>
 
 <style>
