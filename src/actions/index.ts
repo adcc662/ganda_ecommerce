@@ -5,7 +5,7 @@ import { describeApiError, invalidFields } from '../lib/api/errors';
 import { ApiError, createHttp } from '../lib/api/http';
 import { countItems } from '../lib/domain/cart';
 import type { AuthResponse } from '../lib/domain/types';
-import { loginInput, registerInput } from '../lib/session/forms';
+import { forgotPasswordInput, loginInput, registerInput, resetPasswordInput } from '../lib/session/forms';
 import { withAccount } from '../lib/session/server';
 
 /**
@@ -75,6 +75,40 @@ export const server = {
           // API validation failures come back as data so the form shows each message under its field.
           const invalid = invalidFields(e);
           if (invalid) return { user: null, invalid };
+          fail(e);
+        }
+      },
+    }),
+
+    /** Always answers the same way, whether or not the account exists (the API never says). */
+    forgotPassword: defineAction({
+      accept: 'form',
+      input: forgotPasswordInput,
+      handler: async ({ email }) => {
+        try {
+          await anonymous().forgotPassword(email);
+          return { sent: true, invalid: null };
+        } catch (e) {
+          const invalid = invalidFields(e);
+          if (invalid) return { sent: false, invalid };
+          fail(e);
+        }
+      },
+    }),
+
+    /** An invalid, used or expired token is a BAD_REQUEST with the API's message. */
+    resetPassword: defineAction({
+      accept: 'form',
+      input: resetPasswordInput,
+      handler: async ({ token, newPassword }, context) => {
+        try {
+          await anonymous().resetPassword(token, newPassword);
+          // The API revoked every JWT of this user, so a session in this browser cannot be used any more.
+          context.session?.destroy();
+          return { reset: true, invalid: null };
+        } catch (e) {
+          const invalid = invalidFields(e);
+          if (invalid) return { reset: false, invalid };
           fail(e);
         }
       },

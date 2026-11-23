@@ -61,6 +61,11 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
           aria-invalid={!!fields.password}
         />
       </Field>
+      {mode === 'login' && (
+        <a className="auth__forgot" href="/forgot-password">
+          Forgot your password?
+        </a>
+      )}
       {mode === 'register' && (
         <Field label="Phone (optional)" error={fields.phone}>
           <input className="input" name="phone" type="tel" autoComplete="tel" />
@@ -76,6 +81,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'register' }) {
       <style>{`
         .auth { display: grid; gap: 16px; }
         .auth__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .auth__forgot { justify-self: end; margin-top: -8px; font-size: .8125rem; }
         @media (max-width: 420px) { .auth__pair { grid-template-columns: 1fr; } }
       `}</style>
     </form>

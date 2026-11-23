@@ -34,6 +34,7 @@ The dev server runs on port 3000. Point the storefront at another API with `PUBL
 | `/`, `/section/[slug]`, `/search?q=` | The catalog, server-rendered from the public API |
 | `/p/[slug]` | A product entry with add to cart |
 | `/login`, `/register`, `/account` | Auth; account offers "Log out on every device" (`POST /api/auth/logout-all`) |
+| `/forgot-password`, `/reset-password?token=` | Password reset: request an emailed link (`POST /api/auth/forgot-password`, always the same answer), then choose a new password (`POST /api/auth/reset-password`). Both are plain forms posting to Astro Actions and work without JavaScript. The reset page sends `Referrer-Policy: no-referrer` and `Cache-Control: no-store` so the token stays out of other sites and caches. A successful reset ends this browser's session, because the API revokes every token. Needs the API's `PASSWORD_RESET_URL` to point at this page (its dev default, `http://localhost:3000/reset-password`, already does). |
 | `/cart`, `/checkout`, `/orders`, `/orders/[id]` | Cart, addresses and order placement, order history and payment |
 | `/sell`, `/sell/listings` | Seller composer with live preview, and the seller's listings |
 

@@ -31,6 +31,11 @@ export function accountApi(http: Http) {
     register: (body: { email: string; password: string; firstName: string; lastName: string; phone?: string }) =>
       http.request<AuthResponse>('/api/auth/register', { method: 'POST', body }),
     logoutAll: () => http.request<void>('/api/auth/logout-all', { method: 'POST' }),
+    /** Always 202, whether or not the account exists; the API emails a single-use link valid for 30 minutes. */
+    forgotPassword: (email: string) => http.request<void>('/api/auth/forgot-password', { method: 'POST', body: { email } }),
+    /** 204 on success; the API also revokes every JWT issued to the user. */
+    resetPassword: (token: string, newPassword: string) =>
+      http.request<void>('/api/auth/reset-password', { method: 'POST', body: { token, newPassword } }),
 
     cart: () => http.request<CartItem[]>('/api/cart'),
     addToCart: (productId: number, quantity: number) =>
