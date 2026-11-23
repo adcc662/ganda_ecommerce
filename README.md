@@ -49,7 +49,7 @@ Browser ──session cookie (httpOnly)──▶ Astro server ──Bearer JWT�
 
 - Login and register are Astro Actions (`src/actions/index.ts`). They call the API and store the JWT and the user in an Astro Session. The browser only receives the session cookie: `httpOnly`, `SameSite=Lax`, and `Secure` in production. Nothing in the page's JavaScript can read the JWT.
 - Sessions use the filesystem storage that `@astrojs/node` enables and last 24h, the same as the API's `jwt.expiration`. Running several server instances needs a shared session driver (for example Redis) in `astro.config.mjs`.
-- `src/middleware.ts` puts the user in `Astro.locals.user` on every request.
+- `src/middleware.ts` runs before every page renders. For a logged-in visitor it reads the cart, which also checks the token. It puts the user and the cart count in `Astro.locals`. If the API has revoked the token (for example after logging out on every device), the session ends right there and the visitor continues logged out.
 - Cart, address, order and payment changes are Actions that attach the JWT on the server (`withAccount` in `src/lib/session/server.ts`). When the API rejects the token (401), the session ends and the visitor is sent to log in.
 - Astro rejects cross-site form posts to Actions. Browsers pass the check through `Sec-Fetch-Site`. When deploying behind a public domain, also list it in `security.allowedDomains` so the server knows its own origin.
 
